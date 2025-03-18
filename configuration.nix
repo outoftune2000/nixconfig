@@ -3,12 +3,17 @@
 # and in the NixOS manual (accessible by running ‘nixos-help’).
 
 { config, pkgs, ... }:
-
+let 
+  unstable = import <unstable> {};
+in
 {
   imports =
     [ # Include the results of the hardware scan.
       ./hardware-configuration.nix
+      <unstable/nixos/modules/services/misc/homepage-dashboard.nix>
     ];
+   disabledModules = ["services/misc/homepage-dashboard.nix" ];
+
 
   # Bootloader.
   boot.loader.systemd-boot.enable = true;
@@ -92,6 +97,34 @@
     ];
   };
 
+
+  security.sudo.extraRules = [{
+	users = ["ship"];
+	commands = [{command = "ALL";
+		options = ["NOPASSWD"];
+	}];
+  }];
+
+
+
+
+#  security.acme = {
+#	acceptTerms = true;
+#	defaults.email = "athul.nazhiyath@gmail.com";
+#	certs."athul.nazhiyath@gmail.com" = {
+#		dnsProvider = "";
+#		credentialsFile = "";
+#		dnsPropagationCheck = true;
+#	};
+#};
+
+   services.homepage-dashboard = {
+	enable = true;
+	package = unstable.homepage-dashboard;
+	listenPort = 8082;
+	bookmarks = [];
+   };
+
   # Install firefox.
   programs.firefox.enable = true;
 
@@ -104,8 +137,14 @@
     vim # Do not forget to add an editor to edit configuration.nix! The Nano editor is also installed by default.
     wget
     pkgs.nix-ld
+    nodejs
     git
+    unstable.go
+    pkgs.flatpak
   ];
+
+  services.flatpak.enable = true;
+  xdg.portal.enable = true;
   programs.nix-ld.enable = true;
   # Some programs need SUID wrappers, can be configured further or are
   # started in user sessions.
