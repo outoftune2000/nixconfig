@@ -69,7 +69,6 @@ in
 
   # Enable the KDE Plasma Desktop Environment.
   services.displayManager.sddm.enable = true;
- # services.desktopManager.plasma6.enable = true;
 
 
   # Enable CUPS to print documents.
@@ -95,13 +94,15 @@ in
    services.xserver.libinput.enable = true;
 
   #Enable flatpak 
+   services.flatpak.enable = true;
+
    programs.zsh.enable = true;
    programs.dconf.enable = true;
-  # Flatpak config
+   xdg.portal.enable = true; 
+   programs.nix-ld.enable = true; #To run unpatched dynamic libraries
 
-   services.flatpak.enable = true;
-   xdg.portal.enable = true;
-   programs.nix-ld.enable = true;
+
+
   #docker configurations
    virtualisation.docker = {
     enable = true;
@@ -133,6 +134,7 @@ in
   users.users.ship = {
     isNormalUser = true;
     description = "Athul";
+    initialPassword = "password";
     extraGroups = [ "networkmanager" "wheel" ];
     packages = with pkgs; [
       kdePackages.kate
@@ -314,6 +316,46 @@ networking.firewall = {
    environment.shells = with pkgs; [zsh];
 
    security.polkit.enable = true;
+
+ # Nix daemon config
+  nix = {
+    # Automate garbage collection
+    gc = {
+      automatic = true;
+      dates = "weekly";
+      options = "--delete-older-than 7d";
+    };
+
+    # Flakes settings
+    package = pkgs.nixVersions.git;
+
+    settings = {
+      # Automate `nix store --optimise`
+      auto-optimise-store = true;
+
+      # Required by Cachix to be used as non-root user
+      trusted-users = [ "root" "gvolpe" ];
+
+      experimental-features = [ "nix-command" "flakes" ];
+      warn-dirty = false;
+
+      # Binary caches
+      substituters = [
+        "https://cache.nixos.org"
+        "https://cache.garnix.io"
+        "https://gvolpe-nixos.cachix.org"
+      ];
+      trusted-public-keys = [
+        "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
+        "cache.garnix.io:CTFPyKSLcx5RMJKfLo5EEPUObbA78b0YQ2DTCJXqr9g="
+        "gvolpe-nixos.cachix.org-1:0MPlBIMwYmrNqoEaYTox15Ds2t1+3R+6Ycj0hZWMcL0="
+      ];
+
+      # Avoid unwanted garbage collection when using nix-direnv
+      keep-outputs = true;
+      keep-derivations = true;
+    };
+  };
   
   # This value determines the NixOS release from which the default
   # settings for stateful data, like file locations and database versions
