@@ -7,6 +7,7 @@ let
   unstable = import <unstable> {};
 in
 {
+  nixpkgs.config.allowUnfree = true;
   imports =
     [ # Include the results of the hardware scan.
       ./hardware-configuration.nix
@@ -15,9 +16,15 @@ in
    disabledModules = ["services/misc/homepage-dashboard.nix" ];
 
 
-  # Bootloader.
-  boot.loader.systemd-boot.enable = true;
+  # Bootloader
+  boot.loader.grub.enable = true;
+  boot.loader.grub.efiSupport = true;
+  #boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
+  boot.loader.efi.efiSysMountPoint = "/boot";
+  boot.loader.grub.device = "nodev";
+  boot.loader.grub.useOSProber = true;
+
 
   networking.hostName = "Tune"; # Define your hostname.
  # networking.wireless.enable = true;  # Enables wireless support via wpa_supplicant.
@@ -47,19 +54,23 @@ in
     LC_TIME = "en_IN";
   };
 
+  console = {
+    font = "Lat2-Terminus16";
+    keyMap = "us";
+  };
+
   # Enable the X11 windowing system.
   # You can disable this if you're only using the Wayland session.
-  services.xserver.enable = true;
+  services.xserver = {
+    enable = true;
+    desktopManager.plasma6.enable = true;
+    xkb.layout = "us";
+  };
 
   # Enable the KDE Plasma Desktop Environment.
   services.displayManager.sddm.enable = true;
-  services.desktopManager.plasma6.enable = true;
+ # services.desktopManager.plasma6.enable = true;
 
-  # Configure keymap in X11
-  services.xserver.xkb = {
-    layout = "us";
-    variant = "";
-  };
 
   # Enable CUPS to print documents.
   services.printing.enable = true;
@@ -73,7 +84,7 @@ in
     alsa.support32Bit = true;
     pulse.enable = true;
     # If you want to use JACK applications, uncomment this
-    #jack.enable = true;
+    jack.enable = true;
 
     # use the example session manager (no others are packaged yet so this is enabled by default,
     # no need to redefine it in your config for now)
@@ -83,31 +94,22 @@ in
   # Enable touchpad support (enabled default in most desktopManager).
    services.xserver.libinput.enable = true;
 
-  # Define a user account. Don't forget to set a password with ‘passwd’.
-  users.users.ship = {
-    isNormalUser = true;
-    description = "Athul";
-    extraGroups = [ "networkmanager" "wheel" ];
-    packages = with pkgs; [
-      kdePackages.kate
-	neovim
-	brave
-	vlc
-    #  thunderbird
-    ];
-  };
+  #Enable flatpak 
+   programs.zsh.enable = true;
+   programs.dconf.enable = true;
+  # Flatpak config
 
-
-  security.sudo.extraRules = [{
-	users = ["ship"];
-	commands = [{command = "ALL";
-		options = ["NOPASSWD"];
-	}];
-  }];
-
-
-
-
+   services.flatpak.enable = true;
+   xdg.portal.enable = true;
+   programs.nix-ld.enable = true;
+  #docker configurations
+   virtualisation.docker = {
+    enable = true;
+    rootless = {
+      enable = true;
+      setSocketVariable = true;
+    };
+   };
 #  security.acme = {
 #	acceptTerms = true;
 #	defaults.email = "athul.nazhiyath@gmail.com";
@@ -125,25 +127,124 @@ in
 	bookmarks = [];
    };
 
+
+
+  # Define a user account. Don't forget to set a password with ‘passwd’.
+  users.users.ship = {
+    isNormalUser = true;
+    description = "Athul";
+    extraGroups = [ "networkmanager" "wheel" ];
+    packages = with pkgs; [
+      kdePackages.kate
+	    neovim
+	    brave
+	    htop
+      neofetch
+      vlc
+    #  thunderbird
+    ];
+  };
+
+
+  security.sudo.extraRules = [{
+	users = ["ship"];
+	commands = [{command = "ALL";
+		options = ["NOPASSWD"];
+	}];
+  }];
   # Install firefox.
   programs.firefox.enable = true;
 
-  # Allow unfree packages
-  nixpkgs.config.allowUnfree = true;
+
+
+
+
+
+
 
   # List packages installed in system profile. To search, run:
   # $ nix search wget
   environment.systemPackages = with pkgs; [
-    vim # Do not forget to add an editor to edit configuration.nix! The Nano editor is also installed by default.
+    vim 
     wget
-    pkgs.nix-ld
     nodejs
     git
     unstable.go
+    pkgs.nix-ld
     pkgs.flatpak
+    pkgs.incus
     pkgs.appimage-run
+    pkgs.docker
+
+    #terminals
+    alacritty
+    foot
+
+    #shells
+    nushell
+    zsh
+    nh
+
+    #CLI tools
+    bat
+    cava
+    cmake
+    eza
+    htop
+    killall
+    libnotify
+    nano
+    ncdu
+    starship
+    tree
+    wev
+
+    #programming
+    libclang
+    libgcc
+    gcc
+    llvmPackages_latest.libclang.lib
+    rustc
+    cargo
+    jdk17
+    nil
+    hoppscotch
+    vscodium
+    maven
+    nodejs_18
+
+    #Desktop apps
+    bibata-cursors
+    bitwarden
+    postgresql
+    discord
+    easyeffects
+    gparted
+    heroic
+    libsForQt5.kate
+    obs-studio
+    qbittorrent
+    qpwgraph
+    rustdesk
+    signal-desktop
+    spotify
+    transmission_3
+    tutanota-desktop
+    vesktop
+    wireshark
+
+    #gaming
+    goverlay
+    lutris
+    mangohud
+    steam
   ];
-  boot.binfmt.registrations.appimage = {
+  programs.mtr.enable = true;
+
+
+  
+  #appimage-run configurations
+   boot.binfmt.registrations.appimage = {
 	wrapInterpreterInShell = false;
 	interpreter = "${pkgs.appimage-run}/bin/appimage-run";
 	recognitionType = "magic";
@@ -153,9 +254,26 @@ in
 
 };  
 
-  services.flatpak.enable = true;
-  xdg.portal.enable = true;
-  programs.nix-ld.enable = true;
+fonts.packages = with pkgs; [
+  noto-fonts
+  noto-fonts-cjk-sans
+  noto-fonts-emoji
+  roboto-mono
+
+  (nerdfonts.override {fonts = ["JetBrainsMono" "DroidSansMono"];})
+];
+programs.steam = {
+  enable = true;
+  remotePlay.openFirewall = true;
+  dedicatedServer.openFirewall = true;
+};
+  
+  
+  # Incus configs (lxc/lxd)
+
+  virtualisation.incus.enable = true;
+
+
   # Some programs need SUID wrappers, can be configured further or are
   # started in user sessions.
   # programs.mtr.enable = true;
@@ -169,13 +287,34 @@ in
 
   # Enable the OpenSSH daemon.
    services.openssh.enable = true;
+   services.smartd.enable = true;
 
-  # Open ports in the firewall.
-  # networking.firewall.allowedTCPPorts = [ ... ];
-  # networking.firewall.allowedUDPPorts = [ ... ];
-  # Or disable the firewall altogether.
-  # networking.firewall.enable = false;
+networking.firewall = {
+    enable = true;
+    allowedTCPPorts = [];
+    allowedUDPPorts = [];
+    allowedUDPPortRanges = [
+      #kdeconnect
+      {
+        from = 1714;
+        to = 1764;
+      }
+    ];
+    allowedTCPPortRanges = [
+      #kdeconnect
+      {
+        from = 1714;
+        to = 1764;
+      }
+    ];
+  };
 
+   networking.firewall.trustedInterfaces = [ "incusbr0" ];
+   networking.nftables.enable = true;
+   environment.shells = with pkgs; [zsh];
+
+   security.polkit.enable = true;
+  
   # This value determines the NixOS release from which the default
   # settings for stateful data, like file locations and database versions
   # on your system were taken. It‘s perfectly fine and recommended to leave
@@ -184,5 +323,4 @@ in
   # (e.g. man configuration.nix or on https://nixos.org/nixos/options.html).
   system.stateVersion = "24.11"; # Did you read the comment?
 
-}
-
+}  
