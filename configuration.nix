@@ -63,13 +63,21 @@ in
   # You can disable this if you're only using the Wayland session.
   services.xserver = {
     enable = true;
-    desktopManager.plasma6.enable = true;
+    #desktopManager.plasma6.enable = true;
     xkb.layout = "us";
   };
 
   # Enable the KDE Plasma Desktop Environment.
-  services.displayManager.sddm.enable = true;
-
+  services.xserver.displayManager.sddm.enable = true;
+  services.xserver.displayManager.defaultSession = "none+awesome";
+  # Enable awesome
+services.xserver.windowManager.awesome = {
+  enable = true;
+  luaModules = with pkgs.luaPackages; [
+    luarocks
+    luadbi-mysql
+  ];
+};
 
   # Enable CUPS to print documents.
   services.printing.enable = true;
@@ -100,8 +108,12 @@ in
    programs.dconf.enable = true;
    xdg.portal.enable = true; 
    programs.nix-ld.enable = true; #To run unpatched dynamic libraries
+   xdg.portal.extraPortals = with pkgs; [
+    xdg-desktop-portal-wlr
+    xdg-desktop-portal-gtk
+   ];
 
-
+services.dbus.enable = true;
 
   #docker configurations
    virtualisation.docker = {
@@ -142,6 +154,7 @@ in
 	    brave
 	    htop
       neofetch
+      code-cursor
       vlc
     #  thunderbird
     ];
@@ -161,7 +174,11 @@ in
 
 
 
-
+#{
+#              nixpkgs.config.permittedInsecurePackages = [
+#                "deskflow"
+#              ];
+#            }
 
 
   # List packages installed in system profile. To search, run:
@@ -177,7 +194,19 @@ in
     pkgs.incus
     pkgs.appimage-run
     pkgs.docker
-
+    #unstable.deskflow
+    #DE
+    awesome
+    playerctl
+    gobject-introspection
+    picom
+    pavucontrol
+    pulseaudio-ctl
+    rofi
+    wezterm
+    hilbish
+    emoji-picker
+    spicetify-cli
     #terminals
     alacritty
     foot
@@ -186,7 +215,7 @@ in
     nushell
     zsh
     nh
-
+    kdePackages.dolphin
     #CLI tools
     bat
     cava
@@ -234,7 +263,12 @@ in
     tutanota-desktop
     vesktop
     wireshark
-
+    xfce.thunar
+    xfce.thunar-volman
+    xfce.thunar-archive-plugin
+    xfce.thunar-media-tags-plugin
+    shotgun
+    gscreenshot
     #gaming
     goverlay
     lutris
